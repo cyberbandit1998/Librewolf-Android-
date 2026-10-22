@@ -1,0 +1,15 @@
+# Frontend-only configuration used by the `check` stage: validates that Gradle can
+# configure the patched Fenix tree in minutes instead of after a multi-hour build.
+# Mirrors Mozilla's fat-aar mozconfigs (build/mozconfig.no-compile + FasterMake).
+# Separate objdir so nothing leaks into the real build.
+ac_add_options --enable-project=mobile/android
+ac_add_options --enable-android-subproject=fenix
+ac_add_options --target=aarch64-linux-android
+ac_add_options --with-branding=mobile/android/branding/unofficial
+ac_add_options --enable-release
+ac_add_options --without-onnx-runtime
+
+. "$topsrcdir/build/mozconfig.no-compile"
+
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-check
+export BUILD_BACKENDS=FasterMake,RecursiveMake

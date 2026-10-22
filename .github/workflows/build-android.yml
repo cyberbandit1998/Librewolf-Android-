@@ -16,7 +16,7 @@ on:
         description: Last stage to run. Everything before "build" is cheap; "build" takes hours.
         type: choice
         default: package
-        options: [prepare, bootstrap, configure, gradle-check, build, package]
+        options: [prepare, bootstrap, check, configure, build, package]
       publish_release:
         description: Attach the signed APK to a GitHub release
         type: boolean
@@ -70,12 +70,10 @@ jobs:
       - name: Build
         env:
           # Pushes only validate the setup; dispatch runs go as far as asked.
-          STOP_AFTER: ${{ inputs.stop_after || 'gradle-check' }}
+          STOP_AFTER: ${{ inputs.stop_after || 'check' }}
           FIREFOX_VERSION: ${{ inputs.firefox_version }}
           LIBREWOLF_SOURCE_URL: ${{ inputs.librewolf_source_url }}
           LIBREWOLF_SOURCE_REF: ${{ inputs.librewolf_ref }}
-          # Diagnostics while bringing the build up on a new Firefox release.
-          BOOTSTRAP_NONFATAL: ${{ github.event_name == 'push' && '1' || '' }}
           SIGNING_KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
           SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}

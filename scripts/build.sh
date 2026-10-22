@@ -3,9 +3,10 @@
 #
 # Stages run in order up to $STOP_AFTER:
 #   prepare      fetch LibreWolf settings + Firefox source, apply prefs/branding
-#   bootstrap    mach bootstrap (Rust, clang, Android SDK/NDK, ...)
-#   configure    mach configure
-#   gradle-check Gradle configuration phase only (catches broken build.gradle edits)
+#   bootstrap    mach bootstrap (clang, Android SDK/NDK, JDK, ...)
+#   check        frontend-only configure + build + Gradle dry run (minutes): catches broken
+#                build.gradle edits before the long build; uses its own objdir
+#   configure    mach configure for the real build
 #   build        mach build (hours)
 #   package      assemble, zipalign and sign the APK into dist/
 set -euo pipefail
@@ -22,7 +23,7 @@ APP_ID="${APP_ID:-io.github.cyberbandit1998.librewolf}"
 APP_SCHEME="${APP_SCHEME:-librewolf}"
 export MOZBUILD_STATE_PATH="${MOZBUILD_STATE_PATH:-$HOME/.mozbuild}"
 
-STAGES=(prepare bootstrap configure gradle-check build package)
+STAGES=(prepare bootstrap check configure build package)
 LW="$WORK/librewolf-source"
 GROUP_OPEN=0
 
@@ -58,7 +59,7 @@ src_dir() { echo "$WORK/firefox-$(<"$WORK/version")"; }
 # Bootstrap runs its own configure pass; make every mach call use our mozconfig.
 enter_src() {
   cd "$(src_dir)"
-  export MOZCONFIG="$PWD/mozconfig"
+  export MOZCONFIG="$PWD/${1:-mozconfig}"
 }
 
 resolve_version() {
@@ -168,6 +169,7 @@ prepare() {
   group "Build file patches"
   python3 -I "$REPO_ROOT/scripts/patch_build.py" --src "$src"
   cp "$REPO_ROOT/config/mozconfig.arm64" "$src/mozconfig"
+  cp "$REPO_ROOT/config/mozconfig.check" "$src/mozconfig.check"
 }
 
 bootstrap() {
@@ -209,8 +211,10 @@ configure() {
   ./mach configure
 }
 
-gradle_check() {
-  enter_src
+check() {
+  enter_src mozconfig.check
+  ./mach configure
+  ./mach build
   ./mach gradle fenix:assembleRelease --dry-run
 }
 

@@ -20,11 +20,12 @@ It is not affiliated with LibreWolf or Mozilla.
 ## Running it
 
 Actions → **Build Android** → *Run workflow*. `stop_after` picks the last stage:
-`prepare`, `bootstrap`, `configure`, `gradle-check` are cheap checks;
+`prepare`, `bootstrap`, `check`, `configure` are cheap checks;
 `build` takes hours (arm64, no LTO, on a 4-core runner); `package` (default) produces the APK
 as the `librewolf-android` artifact, or as a release with `publish_release`.
 
-Pushes to non-`main` branches run the cheap stages up to `gradle-check` only.
+Pushes to non-`main` branches run the cheap stages up to `check` only (a frontend-only
+build plus a Gradle dry run, so mistakes in the Fenix edits surface in minutes).
 
 To keep updating the same install, add these repository secrets so every build is signed with
 the same key: `SIGNING_KEYSTORE_B64` (base64 of your `.jks`), `SIGNING_KEYSTORE_PASSWORD`,
