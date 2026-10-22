@@ -135,6 +135,25 @@ inspect_tree() {
   done
   echo "--- root build.gradle: required objdir files"
   sed -n '190,260p' "$src/build.gradle"
+  echo "--- nimbus-fml: how Mozilla builds it"
+  local f
+  for f in $(grep -rIl 'nimbus-fml' "$src/taskcluster/kinds/toolchain" "$src/taskcluster/kinds/fetch" 2>/dev/null); do
+    echo "=== ${f#"$src"/}"
+    grep -n -B4 -A28 'nimbus-fml' "$f" | awk 'NR<=90'
+  done
+  ls "$src"/taskcluster/scripts/misc/ 2>/dev/null | grep -i -E 'nimbus|uniffi|appservices|application' || true
+  for f in $(ls "$src"/taskcluster/scripts/misc/*nimbus* 2>/dev/null); do
+    echo "=== ${f#"$src"/}"
+    awk 'NR<=60' "$f"
+  done
+  echo "--- app-services in the tree"
+  grep -rn -i 'application-services' "$src"/taskcluster/kinds/fetch/*.yml 2>/dev/null | awk 'NR<=15'
+  ls "$src/third_party/rust" 2>/dev/null | grep -i -E 'nimbus|uniffi|appservices|application' || true
+  ls -d "$src"/services/* "$src"/third_party/application-services* 2>/dev/null | awk 'NR<=15'
+  echo "--- how Fenix/gradle uses NIMBUS_FML"
+  grep -n -i 'nimbus_fml\|nimbus-fml\|fmlBinary' "$src/mobile/android/gradle.configure" \
+    "$src/mobile/android/moz.configure" "$src/mobile/android/fenix/app/build.gradle" \
+    "$src/mobile/android/shared-settings.gradle" "$src/build.gradle" 2>/dev/null | awk 'NR<=30'
   echo "--- who produces buildid.h"
   grep -rIn 'buildid\.h' "$src/config" "$src/build" --include='*.build' --include='Makefile.in' \
     --include='*.mk' --include='*.py' 2>/dev/null | sed "s#^$src/##" | head -n 15 || true
