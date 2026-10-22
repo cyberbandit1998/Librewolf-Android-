@@ -154,6 +154,8 @@ prepare() {
   group "Rebrand"
   python3 -I "$REPO_ROOT/scripts/rebrand.py" --src "$src" --name "$APP_NAME" \
     --app-id "$APP_ID" --scheme "$APP_SCHEME" --overlay "$REPO_ROOT/branding/overlay"
+  group "Build file patches"
+  python3 -I "$REPO_ROOT/scripts/patch_build.py" --src "$src"
   cp "$REPO_ROOT/config/mozconfig.arm64" "$src/mozconfig"
 }
 
