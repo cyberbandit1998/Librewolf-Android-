@@ -126,6 +126,17 @@ inspect_tree() {
   grep -rnE 'play[-.]services|firebase|com\.google\.android\.gms|installreferrer|google-services' \
     "$src/mobile/android" "$src/gradle" --include='*.gradle' --include='*.kts' --include='*.toml' |
     sed "s#^$src/##" | head -n 80 || true
+  echo "--- build/mozconfig.no-compile and artifact mozconfigs"
+  local f
+  for f in build/mozconfig.no-compile build/mozconfig.artifact build/mozconfig.artifact.automation; do
+    echo "=== $f"
+    cat "$src/$f" 2>/dev/null || echo "(missing)"
+  done
+  echo "--- root build.gradle: required objdir files"
+  sed -n '190,260p' "$src/build.gradle"
+  echo "--- who produces buildid.h"
+  grep -rIn 'buildid\.h' "$src/config" "$src/build" --include='*.build' --include='Makefile.in' \
+    --include='*.mk' --include='*.py' 2>/dev/null | sed "s#^$src/##" | head -n 15 || true
 }
 
 apply_librewolf_prefs() {
