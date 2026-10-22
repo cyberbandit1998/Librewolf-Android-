@@ -135,6 +135,13 @@ inspect_tree() {
   done
   echo "--- root build.gradle: required objdir files"
   sed -n '190,260p' "$src/build.gradle"
+  echo "--- embedded-uniffi-bindgen: where configure looks for it"
+  local uf
+  while read -r uf; do
+    echo "=== ${uf#"$src"/}"
+    grep -n -B6 -A22 -i 'embedded.uniffi.bindgen' "$uf" | head -n 90
+  done < <(grep -rIl -i 'embedded.uniffi.bindgen' "$src" --include='*.configure' --include='moz.configure' \
+    --include='*.yml' --include='*.sh' 2>/dev/null | head -n 6)
   echo "--- who produces buildid.h"
   grep -rIn 'buildid\.h' "$src/config" "$src/build" --include='*.build' --include='Makefile.in' \
     --include='*.mk' --include='*.py' 2>/dev/null | sed "s#^$src/##" | head -n 15 || true
