@@ -120,15 +120,16 @@ inspect_tree() {
   grep -rnE 'play[-.]services|firebase|com\.google\.android\.gms|installreferrer|google-services' \
     "$src/mobile/android" "$src/gradle" --include='*.gradle' --include='*.kts' --include='*.toml' |
     sed "s#^$src/##" | head -n 80 || true
-  echo "--- onnxruntime in bootstrap / toolchain definitions"
-  grep -rIn onnxruntime "$src/python/mozboot" "$src/taskcluster/kinds/toolchain" 2>/dev/null |
-    sed "s#^$src/##" | head -n 40 || true
-  grep -rIln onnxruntime "$src/mobile/android" "$src/toolkit/moz.configure" "$src/build" 2>/dev/null |
-    sed "s#^$src/##" | head -n 20 || true
-  echo "--- where bootstrap installs Android packages"
-  grep -n 'def install_mobile_android_packages' -A45 \
-    "$src/python/mozboot/mozboot/linux_common.py" "$src/python/mozboot/mozboot/base.py" 2>/dev/null |
-    sed "s#^$src/##" | head -n 120 || true
+  echo "--- onnxruntime in configure"
+  grep -n -B6 -A30 onnxruntime "$src/toolkit/moz.configure" | head -n 160 || true
+  grep -rIn onnx "$src"/build/moz.configure/*.configure | head -n 20 || true
+  echo "--- bootstrap.configure (toolchain fetching)"
+  grep -n 'enable-bootstrap\|def bootstrap\|TASKCLUSTER\|toolchain-' \
+    "$src/build/moz.configure/bootstrap.configure" | head -n 40 || true
+  echo "--- mozboot/bootstrap.py: toolchain/configure handling"
+  grep -n 'configure\|toolchain\|onnx\|mozconfig' "$src/python/mozboot/mozboot/bootstrap.py" | head -n 80 || true
+  echo "--- mach bootstrap --help"
+  (cd "$src" && ./mach bootstrap --help 2>&1 | head -n 60) || true
 }
 
 apply_librewolf_prefs() {
