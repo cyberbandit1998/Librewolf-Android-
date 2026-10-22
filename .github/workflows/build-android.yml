@@ -74,6 +74,9 @@ jobs:
           FIREFOX_VERSION: ${{ inputs.firefox_version }}
           LIBREWOLF_SOURCE_URL: ${{ inputs.librewolf_source_url }}
           LIBREWOLF_SOURCE_REF: ${{ inputs.librewolf_ref }}
+          # Diagnostics while bringing the build up on a new Firefox release.
+          TRACE_BOOTSTRAP: ${{ github.event_name == 'push' && '1' || '' }}
+          BOOTSTRAP_NONFATAL: ${{ github.event_name == 'push' && '1' || '' }}
           SIGNING_KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
           SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}

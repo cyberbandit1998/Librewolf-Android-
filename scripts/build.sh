@@ -159,8 +159,34 @@ prepare() {
 
 bootstrap() {
   enter_src
+  # Sample the process list while bootstrap runs, to see which command asks for
+  # which toolchain (the failing request is made by a subprocess of mach).
+  local tracer=0 trace="$WORK/bootstrap-ps.log" rc=0
+  if [[ -n ${TRACE_BOOTSTRAP:-} ]]; then
+    (
+      set +e
+      while sleep 1; do
+        ps -eo pid,ppid,args | grep -E '[m]ach|[c]onfigure|[a]rtifact' | cut -c1-400
+        for pid in $(pgrep -f 'artifact toolchain' || true); do
+          echo "env[$pid]: $(tr '\0' ' ' <"/proc/$pid/environ" 2>/dev/null |
+            grep -oE '(MOZCONFIG|MOZ_OBJDIR|MOZBUILD_STATE_PATH)=[^ ]*' | tr '\n' ' ')"
+        done
+      done
+    ) >"$trace" 2>&1 &
+    tracer=$!
+  fi
   ./mach --no-interactive bootstrap \
-    --application-choice="GeckoView/Firefox for Android" --no-system-changes
+    --application-choice="GeckoView/Firefox for Android" --no-system-changes || rc=$?
+  if ((tracer)); then
+    kill "$tracer" 2>/dev/null || true
+    group "bootstrap process trace"
+    awk '!seen[$0]++' "$trace" | head -n 120
+  fi
+  if ((rc)); then
+    echo "bootstrap failed with exit code $rc"
+    [[ -n ${BOOTSTRAP_NONFATAL:-} ]] || return "$rc"
+    echo "BOOTSTRAP_NONFATAL set: continuing so later stages show what is still missing"
+  fi
 }
 
 configure() {
