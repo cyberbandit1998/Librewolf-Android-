@@ -177,8 +177,10 @@ bootstrap() {
     ) >"$trace" 2>&1 &
     tracer=$!
   fi
+  # No --no-system-changes: that flag skips the Android SDK/NDK install and only
+  # fetches the JDK and emulator image. Fine to let it touch a disposable runner.
   ./mach --no-interactive bootstrap \
-    --application-choice="GeckoView/Firefox for Android" --no-system-changes || rc=$?
+    --application-choice="GeckoView/Firefox for Android" || rc=$?
   if ((tracer)); then
     kill "$tracer" 2>/dev/null || true
     group "bootstrap process trace"
