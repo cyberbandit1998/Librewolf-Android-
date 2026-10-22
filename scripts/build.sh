@@ -55,6 +55,12 @@ stage_enabled() {
 
 src_dir() { echo "$WORK/firefox-$(<"$WORK/version")"; }
 
+# Bootstrap runs its own configure pass; make every mach call use our mozconfig.
+enter_src() {
+  cd "$(src_dir)"
+  export MOZCONFIG="$PWD/mozconfig"
+}
+
 resolve_version() {
   if [[ -z $FIREFOX_VERSION && -f $LW/version ]]; then
     FIREFOX_VERSION=$(tr -d '[:space:]' <"$LW/version")
@@ -120,16 +126,6 @@ inspect_tree() {
   grep -rnE 'play[-.]services|firebase|com\.google\.android\.gms|installreferrer|google-services' \
     "$src/mobile/android" "$src/gradle" --include='*.gradle' --include='*.kts' --include='*.toml' |
     sed "s#^$src/##" | head -n 80 || true
-  echo "--- onnxruntime in configure"
-  grep -n -B6 -A30 onnxruntime "$src/toolkit/moz.configure" | head -n 160 || true
-  grep -rIn onnx "$src"/build/moz.configure/*.configure | head -n 20 || true
-  echo "--- bootstrap.configure (toolchain fetching)"
-  grep -n 'enable-bootstrap\|def bootstrap\|TASKCLUSTER\|toolchain-' \
-    "$src/build/moz.configure/bootstrap.configure" | head -n 40 || true
-  echo "--- mozboot/bootstrap.py: toolchain/configure handling"
-  grep -n 'configure\|toolchain\|onnx\|mozconfig' "$src/python/mozboot/mozboot/bootstrap.py" | head -n 80 || true
-  echo "--- mach bootstrap --help"
-  (cd "$src" && ./mach bootstrap --help 2>&1 | head -n 60) || true
 }
 
 apply_librewolf_prefs() {
@@ -162,30 +158,30 @@ prepare() {
 }
 
 bootstrap() {
-  cd "$(src_dir)"
+  enter_src
   ./mach --no-interactive bootstrap \
     --application-choice="GeckoView/Firefox for Android" --no-system-changes
 }
 
 configure() {
-  cd "$(src_dir)"
+  enter_src
   ./mach configure
 }
 
 gradle_check() {
-  cd "$(src_dir)"
+  enter_src
   ./mach gradle fenix:assembleRelease --dry-run
 }
 
 build() {
-  cd "$(src_dir)"
+  enter_src
   ./mach build
 }
 
 package() {
   local src apk
   src=$(src_dir)
-  cd "$src"
+  enter_src
   ./mach gradle fenix:assembleRelease
   group "APK outputs"
   find "$src"/obj-* -name '*.apk' -not -name '*androidTest*' | sort

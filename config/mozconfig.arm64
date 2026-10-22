@@ -12,3 +12,7 @@ ac_add_options --disable-tests
 ac_add_options --disable-crashreporter
 ac_add_options --disable-updater
 ac_add_options --enable-strip
+
+# On-device ML runtime: not wanted here, and its prebuilt toolchain is not always
+# available to bootstrap (toolkit/moz.configure fetches it unless told otherwise).
+ac_add_options --without-onnx-runtime
