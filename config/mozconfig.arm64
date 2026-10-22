@@ -13,6 +13,10 @@ ac_add_options --disable-crashreporter
 ac_add_options --disable-updater
 ac_add_options --enable-strip
 
+# nimbus-fml is built from the tarball by scripts/build.sh (host_tools); Mozilla's
+# toolchain index does not have it for every release.
+export NIMBUS_FML="${MOZBUILD_STATE_PATH:-$HOME/.mozbuild}/nimbus-fml/nimbus-fml"
+
 # configure fetches prebuilt host tools it needs (embedded-uniffi-bindgen, nimbus-fml)
 # from Mozilla's toolchain index; this is off by default for tarball builds.
 ac_add_options --enable-bootstrap

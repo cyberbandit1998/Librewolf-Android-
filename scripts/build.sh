@@ -224,11 +224,31 @@ bootstrap() {
     [[ -n ${BOOTSTRAP_NONFATAL:-} ]] || return "$rc"
     echo "BOOTSTRAP_NONFATAL set: continuing so later stages show what is still missing"
   fi
+  host_tools
 }
 
 configure() {
   enter_src
   ./mach configure
+}
+
+# Things `mach bootstrap` does not provide for an arm64 tarball build.
+host_tools() {
+  command -v rustup >/dev/null || die "rustup not found (needed for the Android Rust target)"
+  # bootstrap only registers the host target; the device ABI has to be added.
+  rustup target add aarch64-linux-android
+
+  # nimbus-fml (Nimbus feature-manifest compiler used by Fenix's Gradle build) is a
+  # prebuilt toolchain on Mozilla's index, but not for every release. Its source lives in
+  # the tarball (taskcluster/kinds/toolchain/nimbus-fml.yml: services/app-services-tools).
+  local src dest
+  src=$(src_dir)
+  dest="$MOZBUILD_STATE_PATH/nimbus-fml"
+  if [[ ! -x $dest/nimbus-fml ]]; then
+    (cd "$src" && CARGO_TARGET_DIR="$WORK/nimbus-fml-target" cargo build --release --locked -p nimbus-fml)
+    install -D "$WORK/nimbus-fml-target/release/nimbus-fml" "$dest/nimbus-fml"
+  fi
+  "$dest/nimbus-fml" --version
 }
 
 check() {
