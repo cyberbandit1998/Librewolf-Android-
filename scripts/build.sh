@@ -248,7 +248,8 @@ host_tools() {
     (cd "$src" && CARGO_TARGET_DIR="$WORK/nimbus-fml-target" cargo build --release --locked -p nimbus-fml)
     install -D "$WORK/nimbus-fml-target/release/nimbus-fml" "$dest/nimbus-fml"
   fi
-  "$dest/nimbus-fml" --version
+  # nimbus-fml has no --version flag; just make sure the binary runs.
+  "$dest/nimbus-fml" --help >/dev/null
 }
 
 check() {
