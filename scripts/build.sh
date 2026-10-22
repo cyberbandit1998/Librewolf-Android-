@@ -19,6 +19,7 @@ LIBREWOLF_SOURCE_URL="${LIBREWOLF_SOURCE_URL:-https://codeberg.org/librewolf/sou
 LIBREWOLF_SOURCE_REF="${LIBREWOLF_SOURCE_REF:-}"
 APP_NAME="${APP_NAME:-LibreWolf}"
 APP_ID="${APP_ID:-io.github.cyberbandit1998.librewolf}"
+APP_SCHEME="${APP_SCHEME:-librewolf}"
 export MOZBUILD_STATE_PATH="${MOZBUILD_STATE_PATH:-$HOME/.mozbuild}"
 
 STAGES=(prepare bootstrap configure gradle-check build package)
@@ -115,13 +116,19 @@ inspect_tree() {
   grep -n 'applicationId' "$src/mobile/android/fenix/app/build.gradle" || true
   echo "--- app_name strings"
   grep -rn 'name="app_name"' "$src/mobile/android/fenix/app/src" --include='*.xml' || true
-  echo "--- Google / Firebase dependencies in the Android build files"
-  grep -rnE 'play-services|firebase|com\.google\.android\.gms|installreferrer|google-services' \
-    "$src/mobile/android" --include='*.gradle' --include='*.kts' --include='*.toml' | head -n 80 || true
-  echo "--- fenix/app/build.gradle (defaultConfig and build types)"
-  sed -n '40,170p' "$src/mobile/android/fenix/app/build.gradle"
-  echo "--- app/geckoview-prefs.js (head)"
-  head -n 40 "$src/mobile/android/app/geckoview-prefs.js"
+  echo "--- Google / Firebase dependencies in the build files"
+  grep -rnE 'play[-.]services|firebase|com\.google\.android\.gms|installreferrer|google-services' \
+    "$src/mobile/android" "$src/gradle" --include='*.gradle' --include='*.kts' --include='*.toml' |
+    sed "s#^$src/##" | head -n 80 || true
+  echo "--- onnxruntime in bootstrap / toolchain definitions"
+  grep -rIn onnxruntime "$src/python/mozboot" "$src/taskcluster/kinds/toolchain" 2>/dev/null |
+    sed "s#^$src/##" | head -n 40 || true
+  grep -rIln onnxruntime "$src/mobile/android" "$src/toolkit/moz.configure" "$src/build" 2>/dev/null |
+    sed "s#^$src/##" | head -n 20 || true
+  echo "--- where bootstrap installs Android packages"
+  grep -n 'def install_mobile_android_packages' -A45 \
+    "$src/python/mozboot/mozboot/linux_common.py" "$src/python/mozboot/mozboot/base.py" 2>/dev/null |
+    sed "s#^$src/##" | head -n 120 || true
 }
 
 apply_librewolf_prefs() {
@@ -149,7 +156,7 @@ prepare() {
   apply_librewolf_prefs "$src"
   group "Rebrand"
   python3 -I "$REPO_ROOT/scripts/rebrand.py" --src "$src" --name "$APP_NAME" \
-    --app-id "$APP_ID" --overlay "$REPO_ROOT/branding/overlay"
+    --app-id "$APP_ID" --scheme "$APP_SCHEME" --overlay "$REPO_ROOT/branding/overlay"
   cp "$REPO_ROOT/config/mozconfig.arm64" "$src/mozconfig"
 }
 

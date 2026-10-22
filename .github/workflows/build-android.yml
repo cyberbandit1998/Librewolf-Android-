@@ -43,12 +43,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Free disk space
+      - name: Free disk space if needed
         run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
-            /opt/hostedtoolcache/CodeQL /usr/local/share/boost /usr/share/swift
-          sudo docker image prune --all --force || true
           df -h /
+          avail_gb=$(df --output=avail -BG / | tail -n1 | tr -dc '0-9')
+          if ((avail_gb < 70)); then
+            sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+              /opt/hostedtoolcache/CodeQL /usr/local/share/boost /usr/share/swift
+            df -h /
+          fi
 
       - name: Add swap
         run: |

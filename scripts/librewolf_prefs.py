@@ -61,6 +61,9 @@ def main():
             skipped.append(line.strip())
         elif denied(m["name"], deny):
             dropped.append(m["name"])
+        elif re.search(r"@\w+@", m["value"]):
+            # geckoview-prefs.js goes through the preprocessor's substitution filter.
+            skipped.append(line.strip())
         else:
             prefs[m["name"]] = normalise(m["value"])
 

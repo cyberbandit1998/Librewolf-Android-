@@ -25,8 +25,14 @@ def main():
     ap.add_argument("--src", required=True, help="Firefox source root")
     ap.add_argument("--name", required=True)
     ap.add_argument("--app-id", required=True)
+    ap.add_argument("--scheme", default="librewolf", help="release deep link scheme")
     ap.add_argument("--overlay", required=True, help="directory copied over fenix/")
     args = ap.parse_args()
+
+    if not re.fullmatch(r"[A-Za-z]\w*(\.[A-Za-z]\w*)+", args.app_id):
+        sys.exit(f"rebrand: invalid application id '{args.app_id}'")
+    if not re.fullmatch(r"[a-z][a-z0-9+.-]*", args.scheme):
+        sys.exit(f"rebrand: invalid deep link scheme '{args.scheme}'")
 
     fenix = pathlib.Path(args.src) / "mobile/android/fenix"
     gradle = fenix / "app/build.gradle"
@@ -38,6 +44,13 @@ def main():
         rf'applicationId\1"{args.app_id}"', "applicationId")
     sub(gradle, r"applicationIdSuffix(\s*=?\s*)([\"'])\.firefox\2",
         r'applicationIdSuffix\1""', "release applicationIdSuffix")
+
+    # Release declares Firefox's sharedUserId; Android refuses to install a second app
+    # with it next to real Firefox unless both are signed with the same key.
+    sub(gradle, r"(\"sharedUserId\":\s*)\"org\.mozilla\.firefox\.sharedID\"",
+        rf'\1"{args.app_id}.sharedID"', "sharedUserId")
+    sub(gradle, r"(def deepLinkSchemeValue = )\"fenix\"",
+        rf'\1"{args.scheme}"', "deep link scheme")
 
     app_name = re.compile(r"(<string\s+name=\"app_name\"[^>]*>)[^<]*(</string>)")
     total = 0
