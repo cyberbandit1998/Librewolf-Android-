@@ -71,6 +71,8 @@ resolve_version() {
 
 fetch_librewolf() {
   group "LibreWolf source"
+  [[ $LIBREWOLF_SOURCE_URL == https://* ]] || die "LIBREWOLF_SOURCE_URL must be an https:// URL"
+  echo "Cloning $LIBREWOLF_SOURCE_URL"
   local args=(--depth 1)
   [[ -n $LIBREWOLF_SOURCE_REF ]] && args+=(--branch "$LIBREWOLF_SOURCE_REF")
   git clone "${args[@]}" "$LIBREWOLF_SOURCE_URL" "$LW"
@@ -113,19 +115,20 @@ inspect_tree() {
   grep -n 'applicationId' "$src/mobile/android/fenix/app/build.gradle" || true
   echo "--- app_name strings"
   grep -rn 'name="app_name"' "$src/mobile/android/fenix/app/src" --include='*.xml' || true
-  echo "--- Mozilla's own Android mozconfigs"
-  local f
-  while read -r f; do
-    echo "=== ${f#"$src"/}"
-    cat "$f"
-  done < <(find "$src/mobile/android/config/mozconfigs" -type f 2>/dev/null | sort)
+  echo "--- Google / Firebase dependencies in the Android build files"
+  grep -rnE 'play-services|firebase|com\.google\.android\.gms|installreferrer|google-services' \
+    "$src/mobile/android" --include='*.gradle' --include='*.kts' --include='*.toml' | head -n 80 || true
+  echo "--- fenix/app/build.gradle (defaultConfig and build types)"
+  sed -n '40,170p' "$src/mobile/android/fenix/app/build.gradle"
+  echo "--- app/geckoview-prefs.js (head)"
+  head -n 40 "$src/mobile/android/app/geckoview-prefs.js"
 }
 
 apply_librewolf_prefs() {
   local src=$1 cfg target
   cfg=$(find "$LW" -name librewolf.cfg -not -path '*/.git/*' | head -n1)
   [[ -n $cfg ]] || die "librewolf.cfg not found under $LW"
-  target="$src/mobile/android/app/mobile.js"
+  target="$src/mobile/android/app/geckoview-prefs.js"
   [[ -f $target ]] || die "$target not found"
   group "LibreWolf prefs from ${cfg#"$LW"/}"
   python3 -I "$REPO_ROOT/scripts/librewolf_prefs.py" --cfg "$cfg" \

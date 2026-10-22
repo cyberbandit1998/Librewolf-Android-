@@ -12,7 +12,7 @@ It is not affiliated with LibreWolf or Mozilla.
 | --- | --- |
 | Firefox version | pinned by [`librewolf/source`](https://codeberg.org/librewolf/source)'s `version` file (override with `firefox_version`) |
 | Firefox source | `archive.mozilla.org` release tarball, SHA-512 checked |
-| Prefs | `librewolf.cfg` from LibreWolf's settings submodule, literal `defaultPref/pref/lockPref` calls converted to `pref()` lines appended to `mobile/android/app/mobile.js` (`config/pref-denylist.txt` filters out a few) |
+| Prefs | `librewolf.cfg` from LibreWolf's settings submodule, literal `defaultPref/pref/lockPref` calls converted to `pref()` lines appended to `mobile/android/app/geckoview-prefs.js` (`config/pref-denylist.txt` filters out a few) |
 | Identity | own application id and app name (`scripts/rebrand.py`), so it installs next to Firefox; icons via `branding/overlay/` |
 | Build | `config/mozconfig.arm64`, then `./mach build` and `./mach gradle fenix:assembleRelease` |
 | Signing | `apksigner`; your key if the secrets below are set, otherwise a throwaway key |

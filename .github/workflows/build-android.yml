@@ -6,8 +6,11 @@ on:
       firefox_version:
         description: Firefox version (blank = the version LibreWolf's source repo is pinned to)
         default: ""
+      librewolf_source_url:
+        description: Git URL of LibreWolf's source repo (blank = https://codeberg.org/librewolf/source.git)
+        default: ""
       librewolf_ref:
-        description: Branch or tag of codeberg.org/librewolf/source (blank = default branch)
+        description: Branch or tag of that repo (blank = default branch)
         default: ""
       stop_after:
         description: Last stage to run. Everything before "build" is cheap; "build" takes hours.
@@ -66,6 +69,7 @@ jobs:
           # Pushes only validate the setup; dispatch runs go as far as asked.
           STOP_AFTER: ${{ inputs.stop_after || 'gradle-check' }}
           FIREFOX_VERSION: ${{ inputs.firefox_version }}
+          LIBREWOLF_SOURCE_URL: ${{ inputs.librewolf_source_url }}
           LIBREWOLF_SOURCE_REF: ${{ inputs.librewolf_ref }}
           SIGNING_KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
           SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}

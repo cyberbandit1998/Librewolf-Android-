@@ -1,6 +1,10 @@
 # Firefox for Android (GeckoView + Fenix): release build, arm64-v8a only.
+# Modelled on mobile/android/config/mozconfigs/android-aarch64/release, without
+# MOZILLA_OFFICIAL / official branding (Mozilla's logo and API keys).
 ac_add_options --enable-project=mobile/android
+ac_add_options --enable-android-subproject=fenix
 ac_add_options --target=aarch64-linux-android
+ac_add_options --with-branding=mobile/android/branding/unofficial
 
 ac_add_options --enable-release
 ac_add_options --disable-debug
