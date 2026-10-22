@@ -1,0 +1,7 @@
+# Prefs from librewolf.cfg that are not carried over to Android.
+# One name per line; a trailing * matches any suffix. '#' starts a comment.
+
+# Fenix manages the user agent itself; overriding it breaks mobile site layouts.
+general.useragent.*
+# No proxy is configured by LibreWolf, but never let an import change networking.
+network.proxy.*

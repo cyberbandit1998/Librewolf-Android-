@@ -1,0 +1,104 @@
+name: Build Android
+
+on:
+  workflow_dispatch:
+    inputs:
+      firefox_version:
+        description: Firefox version (blank = the version LibreWolf's source repo is pinned to)
+        default: ""
+      librewolf_ref:
+        description: Branch or tag of codeberg.org/librewolf/source (blank = default branch)
+        default: ""
+      stop_after:
+        description: Last stage to run. Everything before "build" is cheap; "build" takes hours.
+        type: choice
+        default: package
+        options: [prepare, bootstrap, configure, gradle-check, build, package]
+      publish_release:
+        description: Attach the signed APK to a GitHub release
+        type: boolean
+        default: false
+  push:
+    branches-ignore: [main]
+    paths:
+      - .github/workflows/build-android.yml
+      - scripts/**
+      - config/**
+      - branding/**
+
+concurrency:
+  group: build-android-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/boost /usr/share/swift
+          sudo docker image prune --all --force || true
+          df -h /
+
+      - name: Add swap
+        run: |
+          sudo fallocate -l 8G /mnt/swapfile
+          sudo chmod 600 /mnt/swapfile
+          sudo mkswap /mnt/swapfile
+          sudo swapon /mnt/swapfile
+          free -h
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential curl git m4 pkg-config python3 python3-venv unzip xz-utils zip
+
+      - name: Build
+        env:
+          # Pushes only validate the setup; dispatch runs go as far as asked.
+          STOP_AFTER: ${{ inputs.stop_after || 'gradle-check' }}
+          FIREFOX_VERSION: ${{ inputs.firefox_version }}
+          LIBREWOLF_SOURCE_REF: ${{ inputs.librewolf_ref }}
+          SIGNING_KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
+          SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: scripts/build.sh
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: librewolf-android
+          path: dist/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  release:
+    needs: build
+    if: inputs.publish_release && inputs.stop_after == 'package'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: librewolf-android
+          path: dist
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(<dist/VERSION)
+          gh release create "v$version-${{ github.run_number }}" dist/*.apk dist/SHA256SUMS \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "Unofficial LibreWolf for Android $version" \
+            --notes "Unofficial build of Firefox $version for Android (arm64-v8a) with LibreWolf's default prefs."

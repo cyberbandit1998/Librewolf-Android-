@@ -1,0 +1,10 @@
+# Firefox for Android (GeckoView + Fenix): release build, arm64-v8a only.
+ac_add_options --enable-project=mobile/android
+ac_add_options --target=aarch64-linux-android
+
+ac_add_options --enable-release
+ac_add_options --disable-debug
+ac_add_options --disable-tests
+ac_add_options --disable-crashreporter
+ac_add_options --disable-updater
+ac_add_options --enable-strip
