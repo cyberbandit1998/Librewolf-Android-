@@ -135,13 +135,6 @@ inspect_tree() {
   done
   echo "--- root build.gradle: required objdir files"
   sed -n '190,260p' "$src/build.gradle"
-  echo "--- embedded-uniffi-bindgen: where configure looks for it"
-  local uf
-  while read -r uf; do
-    echo "=== ${uf#"$src"/}"
-    grep -n -B6 -A22 -i 'embedded.uniffi.bindgen' "$uf" | head -n 90
-  done < <(grep -rIl -i 'embedded.uniffi.bindgen' "$src" --include='*.configure' --include='moz.configure' \
-    --include='*.yml' --include='*.sh' 2>/dev/null | head -n 6)
   echo "--- who produces buildid.h"
   grep -rIn 'buildid\.h' "$src/config" "$src/build" --include='*.build' --include='Makefile.in' \
     --include='*.mk' --include='*.py' 2>/dev/null | sed "s#^$src/##" | head -n 15 || true
@@ -168,7 +161,8 @@ prepare() {
   fetch_firefox
   local src
   src=$(src_dir)
-  inspect_tree "$src"
+  # Diagnostics only: never let them abort the build (greps into `head` can SIGPIPE).
+  inspect_tree "$src" || echo "(inspection failed; continuing)"
   apply_librewolf_prefs "$src"
   group "Rebrand"
   python3 -I "$REPO_ROOT/scripts/rebrand.py" --src "$src" --name "$APP_NAME" \
